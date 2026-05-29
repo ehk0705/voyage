@@ -1,624 +1,1008 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Exemple d’application IA — Gestion de voyages (recherche → réservation → paiement)</title>
-  <meta name="description" content="Exemple de MVP d’application IA pour gérer un voyage : expression du besoin, recherche d’offres, sélection, paiement et confirmation, via API de voyage et paiement sécurisé." />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Gestion intelligente des voyages</title>
 
   <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#111a2e;
-      --panel2: rgba(255,255,255,0.04);
-      --text:#e9eef8;
-      --muted:#b6c1d6;
-      --accent:#4dd3ff;
-      --accent2:#7cffc1;
-      --accent3:#ff6b57;
-      --border: rgba(255,255,255,0.10);
-      --shadow: 0 12px 30px rgba(0,0,0,0.35);
-      --radius: 18px;
-      --max: 1100px;
+    :root {
+      --bleu: #0f4c81;
+      --bleu2: #1d78c1;
+      --fond: #f4f8fc;
+      --blanc: #ffffff;
+      --texte: #1f2937;
+      --gris: #6b7280;
+      --vert: #15803d;
+      --rouge: #dc2626;
+      --orange: #f59e0b;
+      --ombre: 0 10px 25px rgba(0,0,0,0.08);
+      --arrondi: 18px;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(1000px 600px at 10% 0%, rgba(77,211,255,0.15), transparent 60%),
-        radial-gradient(900px 500px at 90% 10%, rgba(124,255,193,0.12), transparent 60%),
-        var(--bg);
-      color: var(--text);
-      line-height: 1.55;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    a{color:inherit}
-    .topbar{
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--fond);
+      color: var(--texte);
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--bleu), var(--bleu2));
+      color: white;
+      text-align: center;
+      padding: 35px 20px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      max-width: 850px;
+      margin: auto;
+      font-size: 1.05rem;
+    }
+
+    nav {
+      background: white;
       position: sticky;
       top: 0;
-      z-index: 10;
-      background: rgba(11,18,32,0.75);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-    }
-    .topbar-inner{
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 14px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 14px;
-    }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      text-decoration:none;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-    }
-    .logo{
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      box-shadow: var(--shadow);
-      display:inline-block;
-    }
-    nav ul{
-      list-style:none;
-      margin:0;
-      padding:0;
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content:flex-end;
-    }
-    nav a{
-      text-decoration:none;
-      padding: 10px 12px;
-      border: 1px solid transparent;
-      border-radius: 999px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    nav a:hover{
-      color: var(--text);
-      border-color: var(--border);
-      background: rgba(255,255,255,0.05);
+      z-index: 20;
+      box-shadow: var(--ombre);
     }
 
-    .wrap{max-width:var(--max); margin:0 auto; padding: 18px 18px 64px}
-    .hero{
-      margin-top: 16px;
-      padding: 22px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      box-shadow: var(--shadow);
-      display:grid;
+    nav ul {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      list-style: none;
+      padding: 14px;
+    }
+
+    nav a {
+      color: var(--bleu);
+      text-decoration: none;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    nav a:hover {
+      background: #e6f2ff;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 25px 18px;
+    }
+
+    .hero {
+      display: grid;
       grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
+      gap: 25px;
+      margin-bottom: 30px;
       align-items: center;
     }
-    .hero h1{
-      margin:0 0 8px 0;
-      font-size: 26px;
-      line-height: 1.2;
-    }
-    .hero p{margin:0; color: var(--muted); font-size: 15px}
-    .hero .badge-row{
-      margin-top: 14px;
-      display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .badge{
-      font-size: 12px;
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: var(--arrondi);
+      box-shadow: var(--ombre);
     }
 
-    /* Image à droite (9631.jpg) */
-    .hero-photo{
-      width:100%;
-      height:220px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow:hidden;
-      position: relative;
-      margin:0;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-      background: rgba(255,255,255,0.03);
-    }
-    .hero-photo img{
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-    }
-    .hero-photo .label{
-      position:absolute;
-      left: 14px;
-      bottom: 14px;
-      right: 14px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(11,18,32,0.65);
-      color: var(--muted);
-      font-size: 13px;
-      backdrop-filter: blur(6px);
+    .hero h2 {
+      color: var(--bleu);
+      margin-bottom: 12px;
+      font-size: 1.7rem;
     }
 
-    .grid{
-      margin-top: 16px;
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 14px;
-      align-items: stretch;
+    .image-card {
+      min-height: 340px;
+      border-radius: var(--arrondi);
+      background:
+        linear-gradient(rgba(15, 76, 129, 0.25), rgba(15, 76, 129, 0.25)),
+        url("img/paris.jfif");
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--ombre);
     }
-    .card{
-      padding: 16px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-    }
-    .card h2{margin:0 0 8px 0; font-size: 16px}
-    .card p, .card li{color: var(--muted); font-size: 14px; margin: 0}
-    .card ul{margin: 10px 0 0 18px; padding:0}
-    .card li{margin: 6px 0}
-    .span-4{grid-column: span 4}
-    .span-6{grid-column: span 6}
-    .span-8{grid-column: span 8}
-    .span-12{grid-column: span 12}
 
-    .section{
-      margin-top: 18px;
-      padding: 18px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
+    .section-title {
+      color: var(--bleu);
+      margin-bottom: 16px;
+      font-size: 1.5rem;
     }
-    .section h2{margin:0 0 10px 0; font-size: 18px}
-    .section p{margin:0; color:var(--muted); font-size:14px}
 
-    .callout{
-      border-radius: var(--radius);
-      border: 1px solid rgba(255,107,87,0.35);
-      background: rgba(255,107,87,0.08);
-      padding: 14px 16px;
-      color: var(--text);
+    section {
+      margin-bottom: 30px;
     }
-    .callout b{color: var(--accent3)}
 
-    .steps{
-      counter-reset: step;
-      list-style:none;
-      padding:0;
-      margin: 10px 0 0 0;
-      display:grid;
+    form {
+      display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .steps li{
-      padding: 12px 12px 12px 44px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      position: relative;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .steps li::before{
-      counter-increment: step;
-      content: counter(step);
-      position:absolute;
-      left: 12px;
-      top: 12px;
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 800;
-      color: #0b1220;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      gap: 18px;
     }
 
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      background: rgba(0,0,0,0.22);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
-      overflow:auto;
-      color: var(--text);
-      white-space: pre-wrap;
+    .form-group {
+      display: flex;
+      flex-direction: column;
     }
 
-    .footer{
-      margin-top: 22px;
-      color: var(--muted);
-      font-size: 13px;
-      opacity: 0.95;
-      border-top: 1px solid var(--border);
-      padding-top: 14px;
-      display:flex;
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #fbfdff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--bleu2);
+      box-shadow: 0 0 0 3px rgba(29,120,193,0.15);
+    }
+
+    .btn {
+      background: var(--bleu);
+      color: white;
+      border: none;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background: var(--bleu2);
+    }
+
+    .actions-recherche {
+      display: flex;
       flex-wrap: wrap;
-      gap: 8px 16px;
-      justify-content: space-between;
-    }
-    .small{font-size: 12px; color: var(--muted)}
-    .pill{
-      display:inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
+      gap: 12px;
+      align-items: center;
     }
 
-    @media (max-width: 980px){
-      .hero{grid-template-columns: 1fr}
-      .steps{grid-template-columns: 1fr}
-      .span-4, .span-6, .span-8{grid-column: span 12}
+    .actions-recherche .btn {
+      margin-top: 0;
     }
 
-    /* Smartphones et petits écrans */
-    @media (max-width: 700px){
-      .topbar-inner{
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+    .btn-reservation {
+      background: var(--vert);
+    }
+
+    .btn-reservation:hover {
+      background: #166534;
+    }
+
+    .btn-vert {
+      background: var(--vert);
+    }
+
+    .btn-vert:hover {
+      background: #166534;
+    }
+
+    .btn-orange {
+      background: var(--orange);
+      color: #1f2937;
+    }
+
+    .info {
+      background: #eaf5ff;
+      border-left: 5px solid var(--bleu2);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+
+    .alerte {
+      background: #fff7ed;
+      border-left: 5px solid var(--orange);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+
+    .erreur {
+      background: #fee2e2;
+      border-left: 5px solid var(--rouge);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+      display: none;
+      color: #7f1d1d;
+      font-weight: bold;
+    }
+
+    .chargement {
+      display: none;
+      padding: 15px;
+      margin-top: 15px;
+      background: #eef6ff;
+      border-radius: 12px;
+      font-weight: bold;
+      color: var(--bleu);
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .offer {
+      background: white;
+      border-radius: var(--arrondi);
+      padding: 20px;
+      box-shadow: var(--ombre);
+      border: 2px solid transparent;
+      transition: 0.2s ease;
+    }
+
+    .offer:hover {
+      border-color: var(--bleu2);
+      transform: translateY(-3px);
+    }
+
+    .offer h3 {
+      color: var(--bleu);
+      margin-bottom: 8px;
+    }
+
+    .price {
+      color: var(--vert);
+      font-size: 1.7rem;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e8f2fb;
+      color: var(--bleu);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .small {
+      color: var(--gris);
+      font-size: 0.95rem;
+    }
+
+    .summary {
+      background: #f8fafc;
+      border: 1px solid #dbeafe;
+      padding: 18px;
+      border-radius: 15px;
+      margin-top: 18px;
+    }
+
+    .seat-map {
+      display: grid;
+      grid-template-columns: repeat(6, 45px);
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .seat {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--bleu);
+    }
+
+    .seat.selected {
+      background: var(--vert);
+      color: white;
+    }
+
+    .seat.occupied {
+      background: #d1d5db;
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 15px;
+    }
+
+    .payment-option {
+      border: 2px solid #dbeafe;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      cursor: pointer;
+      background: #fbfdff;
+      transition: 0.2s ease;
+    }
+
+    .payment-option.active,
+    .payment-option:hover {
+      border-color: var(--bleu2);
+      background: #eaf5ff;
+    }
+
+    .confirmation {
+      display: none;
+      background: #ecfdf5;
+      border: 2px solid #86efac;
+      border-radius: var(--arrondi);
+      padding: 25px;
+    }
+
+    .ticket {
+      background: white;
+      border-left: 6px solid var(--vert);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 15px;
+      box-shadow: var(--ombre);
+    }
+
+    footer {
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding: 22px;
+      margin-top: 35px;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .results,
+      .payment-grid {
+        grid-template-columns: 1fr;
       }
-      nav ul{
-        width: 100%;
-        justify-content: flex-start;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 6px;
-      }
-      nav ul::-webkit-scrollbar{height:6px}
-      nav ul::-webkit-scrollbar-thumb{background: rgba(255,255,255,0.12); border-radius:999px}
 
-      .wrap{padding: 14px 14px 56px}
-      .hero{padding: 16px}
-      .hero h1{font-size: 22px}
-      .hero p{font-size: 14px}
-      .hero-photo{height: 170px}
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .seat-map {
+        grid-template-columns: repeat(4, 45px);
+      }
     }
 
-    @media (max-width: 520px){
-      .brand{gap: 8px}
-      .logo{width: 30px; height: 30px; border-radius: 11px}
+    @media (max-width: 520px) {
+      header h1 {
+        font-size: 1.55rem;
+      }
 
-      nav a{font-size: 13px; padding: 10px 10px}
+      .card {
+        padding: 18px;
+      }
 
-      .wrap{padding: 12px 12px 52px}
-      .hero{gap: 14px}
-      .badge-row{gap: 6px}
-      .badge{font-size: 11px; padding: 6px 9px}
+      nav a {
+        font-size: 0.9rem;
+        padding: 7px;
+      }
 
-      .section{padding: 14px}
-      .card{padding: 14px}
-      .steps li{padding: 12px 12px 12px 42px}
-
-      .hero-photo{height: 150px}
-      .mono{font-size: 12px}
-      .footer{gap: 10px; justify-content: flex-start}
-      .pill{font-size: 11px}
+      .seat-map {
+        grid-template-columns: repeat(3, 45px);
+      }
     }
   </style>
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="#top" aria-label="Accueil">
-        <span class="logo" aria-hidden="true"></span>
-        <span>Voyage IA — MVP</span>
-      </a>
 
-      <nav aria-label="Navigation">
-        <ul>
-          <li><a href="#resume">Résumé</a></li>
-          <li><a href="#flux">Flux</a></li>
-          <li><a href="#architecture">Architecture</a></li>
-          <li><a href="#donnees">Données</a></li>
-          <li><a href="#securite">Sécurité</a></li>
-          <li><a href="#mvp">Backlog MVP</a></li>
-        </ul>
-      </nav>
+<header>
+  <h1>Gestion intelligente des voyages</h1>
+  <p>Recherche de vols, comparaison des prix, choix du siège et simulation de réservation.</p>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#accueil">Accueil</a></li>
+    <li><a href="#recherche">Recherche</a></li>
+    <li><a href="#resultats">Résultats</a></li>
+    <li><a href="#sieges">Sièges</a></li>
+    <li><a href="#paiement">Paiement</a></li>
+    <li><a href="#confirmation">Confirmation</a></li>
+  </ul>
+</nav>
+
+<main class="container">
+
+  <section id="accueil" class="hero">
+    <div class="card">
+      <h2>Voyager avec l’aide de l’intelligence artificielle</h2>
+
+      <p>
+        Cette interface permet de rechercher des offres de vols à partir d’un serveur Node.js.
+        L’utilisateur indique son départ, sa destination, ses dates, son budget et ses préférences.
+      </p>
+
+      <div class="info">
+        Le serveur retourne des offres au format JSON. L’interface les classe ensuite selon le prix,
+        le budget, la durée et les escales.
+      </div>
+
+      <div class="alerte">
+        Cette version est une simulation fonctionnelle. Le paiement réel et la réservation réelle
+        exigent une API de voyage officielle et une solution sécurisée comme Stripe ou PayPal.
+      </div>
     </div>
-  </header>
 
-  <main id="top" class="wrap">
-    <section class="hero" aria-label="Présentation">
-      <div>
-        <h1>Exemple d’application IA, pour gérer des voyages, de la recherche à la réservation, jusqu’au paiement</h1>
-        <p>
-          L’IA sert principalement d’interface conversationnelle : comprendre la demande, clarifier les critères,
-          expliquer les options et guider la décision. La recherche et la réservation effectives s’appuient sur des
-          API de voyage, et le paiement sur un prestataire sécurisé.
-        </p>
+    <div class="image-card"></div>
+  </section>
 
-        <div class="badge-row" aria-label="Mots-clés">
-          <span class="badge">Dialogue et critères</span>
-          <span class="badge">Comparaison d’offres</span>
-          <span class="badge">Paiement sécurisé</span>
-          <span class="badge">Réservation traçable</span>
-          <span class="badge">Backend léger</span>
-        </div>
-      </div>
+  <section id="recherche">
+    <h2 class="section-title">Recherche de vols</h2>
 
-      <!-- Image demandée -->
-      <figure class="hero-photo" aria-label="Illustration : application IA de gestion de voyage">
-        <img src="/ia/img/9631.jfif" alt="Illustration : gestion de voyages, recherche, réservation et paiement">
-      </figure>
-    </section>
+    <div class="card">
+      <form id="formVoyage">
 
-    <section id="resume" class="section" aria-labelledby="h-resume">
-      <h2 id="h-resume">Résumé</h2>
-      <p>
-        Une MVP réaliste combine : (1) une interface web ou mobile, (2) un backend simple (Node.js ou Python/FastAPI)
-        qui orchestre une API d’IA et des API de voyage, (3) une base de données (PostgreSQL) pour profils, paniers,
-        historiques, et (4) un module de paiement (Stripe ou PayPal). L’objectif est de livrer rapidement un parcours
-        complet et fiable, avant d’ajouter des raffinements.
-      </p>
-    </section>
-
-    <section class="grid" aria-label="Blocs principaux">
-      <article id="flux" class="card span-12" aria-labelledby="h-flux">
-        <h2 id="h-flux">Flux utilisateur (parcours minimal)</h2>
-        <ol class="steps" aria-label="Étapes">
-          <li>Demande en langage naturel (destination, dates, budget, contraintes).</li>
-          <li>Clarification : questions courtes, reformulation, critères confirmés.</li>
-          <li>Recherche d’offres via API (vols, hôtels, trains, location, packs).</li>
-          <li>Affichage et filtres (prix, durée, escales, notes, politiques).</li>
-          <li>Sélection : panier, récapitulatif, conditions, frais et taxes.</li>
-          <li>Paiement : création de session + confirmation.</li>
-          <li>Réservation : émission/confirmation + référence + reçu.</li>
-          <li>Suivi : statut, notifications, assistance et modifications.</li>
-        </ol>
-      </article>
-
-      <article class="card span-6" aria-labelledby="h-archi">
-        <h2 id="h-archi">Architecture MVP</h2>
-        <ul>
-          <li>Frontend : web (React/Next, Vue, ou HTML) ou mobile.</li>
-          <li>Backend : Node.js ou Python (FastAPI) — orchestration.</li>
-          <li>IA : extraction de critères + dialogue + explications.</li>
-          <li>API voyage : recherche + disponibilité + réservation.</li>
-          <li>Paiement : Stripe ou PayPal, redirection sécurisée.</li>
-          <li>Base : PostgreSQL (profils, paniers, historiques, logs).</li>
-        </ul>
-      </article>
-
-      <article class="card span-6" aria-labelledby="h-perim">
-        <h2 id="h-perim">Périmètre MVP raisonnable</h2>
-        <ul>
-          <li>Un seul type de parcours prioritaire (ex. vol + hôtel).</li>
-          <li>Filtres essentiels, pas de “tout” dès le début.</li>
-          <li>Gestion d’erreurs propre (API indisponible, prix changé).</li>
-          <li>Traçabilité : logs et identifiants de demandes.</li>
-          <li>Support minimal : annulation/modification selon règles.</li>
-        </ul>
-      </article>
-    </section>
-
-    <section id="architecture" class="section" aria-labelledby="h-impl">
-      <h2 id="h-impl">Implémentation simple (vue d’ensemble)</h2>
-      <div class="grid" aria-label="Composants">
-        <div class="card span-4">
-          <h2>1) Frontend</h2>
-          <p>Écran de chat + écran de résultats + écran panier/paiement.</p>
-          <ul>
-            <li>Recherche guidée (questions courtes)</li>
-            <li>Résultats comparables (tri + filtres)</li>
-            <li>Récapitulatif clair avant paiement</li>
-          </ul>
+        <div class="form-group">
+          <label for="depart">Code IATA du départ</label>
+          <input id="depart" type="text" placeholder="Exemple : YUL" value="YUL" maxlength="3" required />
         </div>
 
-        <div class="card span-4">
-          <h2>2) Backend</h2>
-          <p>Point unique qui coordonne IA, API voyage, paiement, base de données.</p>
-          <ul>
-            <li>Validation des critères</li>
-            <li>Normalisation des données d’offres</li>
-            <li>Création panier + session paiement</li>
-          </ul>
+        <div class="form-group">
+          <label for="destination">Code IATA de destination</label>
+          <input id="destination" type="text" placeholder="Exemple : PAR" value="PAR" maxlength="3" required />
         </div>
 
-        <div class="card span-4">
-          <h2>3) Services externes</h2>
-          <p>Les actions “réelles” (disponibilité, réservation, paiement) passent par des services tiers.</p>
-          <ul>
-            <li>API voyage (inventaire, prix, ticketing)</li>
-            <li>Paiement (3DS/validation, reçu)</li>
-            <li>Messagerie (courriel/SMS) optionnel</li>
-          </ul>
+        <div class="form-group">
+          <label for="dateDepart">Date de départ</label>
+          <input id="dateDepart" type="date" required />
         </div>
-      </div>
 
-      <div class="callout" style="margin-top:14px">
-        <b>Point important :</b> l’IA ne doit pas “inventer” des prix ou des disponibilités.
-        Les chiffres (prix, taxes, horaires, conditions) viennent des API et sont affichés tels quels.
-      </div>
-    </section>
+        <div class="form-group">
+          <label for="dateRetour">Date de retour</label>
+          <input id="dateRetour" type="date" />
+        </div>
 
-    <!-- ✅ AJOUT : informations sur les API de voyage -->
-    <section id="apis" class="section" aria-labelledby="h-apis">
-      <h2 id="h-apis">API de voyage à intégrer (exemples concrets)</h2>
-      <p>
-        L’objectif est d’obtenir un inventaire (offres), de revalider la disponibilité et, si besoin,
-        de réserver auprès d’un fournisseur. Beaucoup d’API sont accessibles uniquement sur dossier (partenariat, volume, usage commercial).
-      </p>
+        <div class="form-group">
+          <label for="typeTrajet">Type de trajet</label>
+          <select id="typeTrajet">
+            <option value="aller-simple">Aller simple</option>
+            <option value="aller-retour">Aller-retour</option>
+          </select>
+        </div>
 
-      <div class="grid" aria-label="API par catégorie">
-        <article class="card span-6" aria-labelledby="h-apis-vols">
-          <h2 id="h-apis-vols">Vols</h2>
-          <ul>
-            <li><b>Amadeus</b> : recherche, disponibilité, réservation (API complète).</li>
-            <li><b>Skyscanner</b> : comparateur, accès souvent soumis à validation.</li>
-            <li><b>Kiwi.com</b> : utile pour itinéraires complexes et multi-segments.</li>
-            <li><b>Aviationstack</b> : données et statuts de vols (plutôt “information” que “réservation”).</li>
-          </ul>
-        </article>
+        <div class="form-group">
+          <label for="budget">Budget maximal en dollars canadiens</label>
+          <input id="budget" type="number" placeholder="Exemple : 1200" value="1200" min="1" required />
+        </div>
 
-        <article class="card span-6" aria-labelledby="h-apis-hotels">
-          <h2 id="h-apis-hotels">Hôtels</h2>
-          <ul>
-            <li><b>Booking.com (partenaires)</b> : large inventaire, accès généralement restreint.</li>
-            <li><b>Expedia Group</b> : recherche et réservation, intéressant aussi pour les packs.</li>
-            <li><b>Hotelbeds</b> : grossiste B2B, très utilisé par des agences, accès strict.</li>
-          </ul>
-        </article>
+        <div class="form-group">
+          <label for="adultes">Nombre d’adultes</label>
+          <input id="adultes" type="number" min="1" value="1" />
+        </div>
 
-        <article class="card span-6" aria-labelledby="h-apis-trains">
-          <h2 id="h-apis-trains">Trains</h2>
-          <ul>
-            <li><b>API SNCF</b> : données ferroviaires (France et certaines liaisons).</li>
-            <li><b>Trainline (partenaires)</b> : couverture européenne, accès commercial.</li>
-            <li><b>Deutsche Bahn</b> : données ferroviaires, utile pour l’Europe centrale.</li>
-          </ul>
-        </article>
+        <div class="form-group">
+          <label for="classe">Classe</label>
+          <select id="classe">
+            <option value="ECONOMY">Économique</option>
+            <option value="PREMIUM_ECONOMY">Économique supérieure</option>
+            <option value="BUSINESS">Affaires</option>
+            <option value="FIRST">Première classe</option>
+          </select>
+        </div>
 
-        <article class="card span-6" aria-labelledby="h-apis-voitures">
-          <h2 id="h-apis-voitures">Location de voitures</h2>
-          <ul>
-            <li><b>CarTrawler</b> : agrégateur spécialisé location.</li>
-            <li><b>Rentalcars (partenaires)</b> : inventaire large, souvent via partenariat.</li>
-            <li><b>Amadeus</b> : option possible aussi pour la location.</li>
-          </ul>
-        </article>
+        <div class="form-group full">
+          <label for="preferences">Préférences</label>
+          <textarea id="preferences" placeholder="Exemple : vol direct, durée courte, départ le matin, éviter les longues escales."></textarea>
+        </div>
 
-        <article class="card span-12" aria-labelledby="h-apis-packs">
-          <h2 id="h-apis-packs">Packs (vol + hôtel)</h2>
-          <ul>
-            <li><b>Expedia Group</b> : souvent le plus simple si le besoin principal est “forfait”.</li>
-            <li><b>Amadeus</b> : permet une orchestration plus flexible, mais demande plus d’intégration.</li>
-          </ul>
-          <div class="callout" style="margin-top:12px">
-            <b>Conseil MVP :</b> commencer par <b>un seul parcours</b> (par exemple vol + hôtel) et <b>un seul fournisseur principal</b>.
-            Ajouter les autres ensuite, quand le suivi, les erreurs et la traçabilité sont solides.
+        <div class="form-group full">
+          <div class="actions-recherche">
+            <button class="btn" type="submit">Rechercher les vols</button>
+            <button class="btn btn-reservation" type="button" onclick="chercherVolPourReserver()">
+              Chercher un vol pour réserver
+            </button>
           </div>
-        </article>
-      </div>
-    </section>
-    <!-- ✅ FIN AJOUT -->
-
-    <section id="donnees" class="section" aria-labelledby="h-data">
-      <h2 id="h-data">Données minimales à stocker (PostgreSQL)</h2>
-      <p>Conserver le strict nécessaire, utile au suivi et au support.</p>
-      <div class="mono" aria-label="Exemple de tables (conceptuel)">
-Utilisateur : id, email, préférences, consentements
-Conversation : id, user_id, résumé_criteres, horodatage
-Panier : id, user_id, items, total_estime, devise, statut
-Réservation : id, panier_id, ref_fournisseur, statut, reçu_url
-Paiement : id, réservation_id, provider, intent_id, statut
-Logs : id, corr_id, type, payload_minimal, horodatage
-      </div>
-    </section>
-
-    <section id="securite" class="section" aria-labelledby="h-sec">
-      <h2 id="h-sec">Sécurité et fiabilité (à ne pas négliger)</h2>
-      <div class="grid" aria-label="Sécurité">
-        <div class="card span-6">
-          <h2>Paiement</h2>
-          <ul>
-            <li>Ne jamais stocker de carte bancaire dans la base.</li>
-            <li>Utiliser la redirection/iframe du prestataire (Stripe/PayPal).</li>
-            <li>Gérer les retours et webhooks (succès, échec, remboursement).</li>
-          </ul>
-        </div>
-        <div class="card span-6">
-          <h2>Réservation</h2>
-          <ul>
-            <li>Verrouiller le prix : revalidation avant paiement si nécessaire.</li>
-            <li>Idempotence : éviter les doubles réservations (clé unique).</li>
-            <li>Journaliser les événements (corrélation par identifiant).</li>
-          </ul>
-        </div>
-        <div class="card span-12">
-          <h2>IA (usage sûr)</h2>
-          <ul>
-            <li>Limiter l’IA au dialogue, à la synthèse et à la sélection de critères.</li>
-            <li>Vérifier/valider côté backend les dates, devises, nombres, formats.</li>
-            <li>Afficher clairement ce qui est “information API” vs “explication IA”.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section id="mvp" class="section" aria-labelledby="h-mvp">
-      <h2 id="h-mvp">Backlog MVP (ordre conseillé)</h2>
-      <div class="grid" aria-label="Priorités MVP">
-        <div class="card span-4">
-          <h2>Priorité 1</h2>
-          <ul>
-            <li>Collecte critères + validation</li>
-            <li>Recherche via une API</li>
-            <li>Affichage + filtres simples</li>
-          </ul>
-        </div>
-        <div class="card span-4">
-          <h2>Priorité 2</h2>
-          <ul>
-            <li>Panier + récapitulatif</li>
-            <li>Paiement (session + retour)</li>
-            <li>Logs et erreurs propres</li>
-          </ul>
-        </div>
-        <div class="card span-4">
-          <h2>Priorité 3</h2>
-          <ul>
-            <li>Réservation + confirmation</li>
-            <li>Courriel de confirmation</li>
-            <li>Historique utilisateur</li>
-          </ul>
         </div>
 
-        <div class="card span-12">
-          <h2>Améliorations après MVP</h2>
-          <ul>
-            <li>Recommandations personnalisées (préférences réelles, pas supposées).</li>
-            <li>Alertes de prix et suivi de disponibilité.</li>
-            <li>Multi-segments, multi-fournisseurs, comparaisons avancées.</li>
-            <li>Support “modification/annulation” avec règles des fournisseurs.</li>
-            <li>Optimisation latence (cache, pagination, pré-sélection).</li>
-          </ul>
-        </div>
-      </div>
-    </section>
+      </form>
 
-    <section class="section" aria-label="Conclusion">
-      <h2>Conclusion</h2>
+      <div id="chargement" class="chargement">Recherche en cours...</div>
+      <div id="erreur" class="erreur"></div>
+    </div>
+  </section>
+
+  <section id="resultats">
+    <h2 class="section-title">Résultats trouvés</h2>
+
+    <div class="card">
       <p>
-        Une bonne MVP n’essaie pas de tout faire. Elle fournit un parcours complet, fiable et traçable.
-        L’IA améliore l’expérience (dialogue, clarification, explication), mais les actions critiques
-        (prix, disponibilité, paiement, réservation) doivent rester pilotées par des API et des règles
-        strictes côté backend.
+        Les offres affichées proviennent du serveur local Node.js.
       </p>
-    </section>
 
-    <div class="footer" aria-label="Pied de page">
-      <div>
-        <span class="pill">Auteur : Hocine Korichi</span>
-        <span class="pill">Version : v4</span>
-      </div>
-      <div class="small">
-        Note : cette page est un exemple de cadrage (pas un produit fini).
+      <div id="listeOffres" class="results"></div>
+    </div>
+  </section>
+
+  <section id="sieges">
+    <h2 class="section-title">Choix du siège</h2>
+
+    <div class="card">
+      <p>Choisis un siège disponible.</p>
+
+      <div id="seatMap" class="seat-map"></div>
+
+      <div class="summary">
+        <p><strong>Siège sélectionné :</strong> <span id="siegeChoisi">Aucun</span></p>
       </div>
     </div>
-  </main>
+  </section>
+
+  <section id="paiement">
+    <h2 class="section-title">Paiement</h2>
+
+    <div class="card">
+      <p>Choisis un mode de paiement. Cette partie reste une simulation.</p>
+
+      <div class="payment-grid">
+        <div class="payment-option" onclick="choisirPaiement(this, 'Carte de crédit')">
+          <h3>Carte de crédit</h3>
+          <p>Visa, Mastercard ou autre carte.</p>
+        </div>
+
+        <div class="payment-option" onclick="choisirPaiement(this, 'PayPal')">
+          <h3>PayPal</h3>
+          <p>Paiement par compte PayPal.</p>
+        </div>
+
+        <div class="payment-option" onclick="choisirPaiement(this, 'Autre moyen')">
+          <h3>Autre moyen</h3>
+          <p>Virement ou portefeuille numérique.</p>
+        </div>
+      </div>
+
+      <div class="summary">
+        <p><strong>Offre choisie :</strong> <span id="offreChoisie">Aucune</span></p>
+        <p><strong>Prix :</strong> <span id="prixChoisi">0</span></p>
+        <p><strong>Paiement :</strong> <span id="paiementChoisi">Aucun</span></p>
+      </div>
+
+      <button class="btn btn-vert" onclick="payerAvecStripe()">Payer par carte bancaire</button>
+    </div>
+  </section>
+
+  <section id="confirmation">
+    <h2 class="section-title">Confirmation</h2>
+
+    <div id="boiteConfirmation" class="confirmation">
+      <h3>Réservation simulée confirmée</h3>
+
+      <div class="ticket">
+        <p><strong>Numéro :</strong> <span id="numeroReservation"></span></p>
+        <p><strong>Départ :</strong> <span id="finalDepart"></span></p>
+        <p><strong>Destination :</strong> <span id="finalDestination"></span></p>
+        <p><strong>Date :</strong> <span id="finalDate"></span></p>
+        <p><strong>Offre :</strong> <span id="finalOffre"></span></p>
+        <p><strong>Siège :</strong> <span id="finalSiege"></span></p>
+        <p><strong>Paiement :</strong> <span id="finalPaiement"></span></p>
+      </div>
+
+      <br />
+
+      <button class="btn btn-orange" onclick="window.print()">Imprimer</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Page développée par Hocine Korichi — Avril 2026 — Tous droits réservés.</p>
+</footer>
+
+<script>
+  let offreSelectionnee = null;
+  let siegeSelectionne = null;
+  let paiementSelectionne = null;
+  let donneesVoyage = {};
+  let offresActuelles = [];
+
+  document.addEventListener("DOMContentLoaded", function() {
+    definirDateParDefaut();
+    creerSieges();
+  });
+
+  function definirDateParDefaut() {
+    const dateDepart = document.getElementById("dateDepart");
+    const dateRetour = document.getElementById("dateRetour");
+
+    const aujourdHui = new Date();
+    aujourdHui.setDate(aujourdHui.getDate() + 7);
+
+    const retour = new Date();
+    retour.setDate(retour.getDate() + 14);
+
+    dateDepart.value = aujourdHui.toISOString().split("T")[0];
+    dateRetour.value = retour.toISOString().split("T")[0];
+  }
+
+  document.getElementById("formVoyage").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const erreur = document.getElementById("erreur");
+    const chargement = document.getElementById("chargement");
+    const listeOffres = document.getElementById("listeOffres");
+
+    erreur.style.display = "none";
+    erreur.textContent = "";
+    listeOffres.innerHTML = "";
+    chargement.style.display = "block";
+
+    offreSelectionnee = null;
+    document.getElementById("offreChoisie").textContent = "Aucune";
+    document.getElementById("prixChoisi").textContent = "0";
+
+    donneesVoyage = {
+      depart: document.getElementById("depart").value.trim().toUpperCase(),
+      destination: document.getElementById("destination").value.trim().toUpperCase(),
+      dateDepart: document.getElementById("dateDepart").value,
+      dateRetour: document.getElementById("dateRetour").value,
+      typeTrajet: document.getElementById("typeTrajet").value,
+      budget: Number(document.getElementById("budget").value),
+      adultes: Number(document.getElementById("adultes").value),
+      classe: document.getElementById("classe").value,
+      preferences: document.getElementById("preferences").value.trim()
+    };
+
+    if (!donneesVoyage.depart || !donneesVoyage.destination || !donneesVoyage.dateDepart) {
+      afficherErreur("Le départ, la destination et la date de départ sont obligatoires.");
+      chargement.style.display = "none";
+      return;
+    }
+
+    if (donneesVoyage.depart.length !== 3 || donneesVoyage.destination.length !== 3) {
+      afficherErreur("Les codes IATA doivent contenir exactement 3 lettres. Exemple : YUL, PAR, ALG.");
+      chargement.style.display = "none";
+      return;
+    }
+
+    if (donneesVoyage.budget <= 0) {
+      afficherErreur("Le budget doit être supérieur à zéro.");
+      chargement.style.display = "none";
+      return;
+    }
+
+    try {
+      const reponse = await fetch("/api/recherche-vols", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(donneesVoyage)
+      });
+
+      const typeContenu = reponse.headers.get("content-type") || "";
+
+      if (!typeContenu.includes("application/json")) {
+        const texte = await reponse.text();
+        console.error("Réponse non JSON reçue :", texte);
+
+        throw new Error(
+          "Le serveur n’a pas retourné du JSON. Lance npm start, puis ouvre la page avec http://localhost:3000."
+        );
+      }
+
+      const resultat = await reponse.json();
+
+      if (!reponse.ok) {
+        throw new Error(resultat.message || "Erreur pendant la recherche.");
+      }
+
+      afficherOffres(resultat.offres);
+
+    } catch (err) {
+      afficherErreur(
+        err.message +
+        " Vérifie aussi que le fichier server.js contient bien la route POST /api/recherche-vols."
+      );
+    } finally {
+      chargement.style.display = "none";
+    }
+  });
+
+  function afficherErreur(message) {
+    const erreur = document.getElementById("erreur");
+    erreur.textContent = message;
+    erreur.style.display = "block";
+  }
+
+  function afficherOffres(offres) {
+    const listeOffres = document.getElementById("listeOffres");
+
+    if (!offres || offres.length === 0) {
+      listeOffres.innerHTML = "<p>Aucune offre trouvée.</p>";
+      return;
+    }
+
+    offresActuelles = offres;
+
+    offres.forEach(function(offre, index) {
+      const compatibleBudget = Number(offre.prix) <= donneesVoyage.budget;
+
+      const div = document.createElement("div");
+      div.className = "offer";
+
+      div.innerHTML = `
+        <span class="badge ${compatibleBudget ? "" : "badge-danger"}">
+          ${compatibleBudget ? "Respecte le budget" : "Dépasse le budget"}
+        </span>
+
+        <h3>${offre.compagnie}</h3>
+
+        <p class="small">Départ : ${offre.depart}</p>
+        <p class="small">Arrivée : ${offre.arrivee}</p>
+        <p class="small">Durée : ${offre.duree}</p>
+        <p class="small">Escales : ${offre.escales}</p>
+
+        <p class="price">${offre.prix} ${offre.devise}</p>
+
+        <button class="btn" onclick="choisirOffre(${index})">
+          Choisir cette offre
+        </button>
+      `;
+
+      listeOffres.appendChild(div);
+    });
+
+    document.getElementById("resultats").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function choisirOffre(index) {
+    offreSelectionnee = offresActuelles[index];
+
+    document.getElementById("offreChoisie").textContent = offreSelectionnee.compagnie;
+    document.getElementById("prixChoisi").textContent =
+      offreSelectionnee.prix + " " + offreSelectionnee.devise;
+
+    document.getElementById("sieges").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function creerSieges() {
+    const seatMap = document.getElementById("seatMap");
+    seatMap.innerHTML = "";
+
+    const lignes = ["A", "B", "C", "D"];
+    const occupes = ["A2", "B3", "C1", "D4", "A5"];
+
+    lignes.forEach(function(ligne) {
+      for (let i = 1; i <= 6; i++) {
+        const nom = ligne + i;
+        const bouton = document.createElement("button");
+
+        bouton.textContent = nom;
+        bouton.className = "seat";
+        bouton.type = "button";
+
+        if (occupes.includes(nom)) {
+          bouton.classList.add("occupied");
+          bouton.disabled = true;
+        }
+
+        bouton.addEventListener("click", function() {
+          document.querySelectorAll(".seat").forEach(function(s) {
+            s.classList.remove("selected");
+          });
+
+          bouton.classList.add("selected");
+          siegeSelectionne = nom;
+          document.getElementById("siegeChoisi").textContent = nom;
+        });
+
+        seatMap.appendChild(bouton);
+      }
+    });
+  }
+
+  function choisirPaiement(element, moyen) {
+    paiementSelectionne = moyen;
+
+    document.querySelectorAll(".payment-option").forEach(function(option) {
+      option.classList.remove("active");
+    });
+
+    element.classList.add("active");
+    document.getElementById("paiementChoisi").textContent = moyen;
+  }
+
+  function confirmerReservation() {
+    if (!offreSelectionnee) {
+      alert("Veuillez choisir une offre.");
+      return;
+    }
+
+    if (!siegeSelectionne) {
+      alert("Veuillez choisir un siège.");
+      return;
+    }
+
+    if (!paiementSelectionne) {
+      alert("Veuillez choisir un mode de paiement.");
+      return;
+    }
+
+    document.getElementById("numeroReservation").textContent =
+      "VOY-" + Math.floor(100000 + Math.random() * 900000);
+
+    document.getElementById("finalDepart").textContent = donneesVoyage.depart;
+    document.getElementById("finalDestination").textContent = donneesVoyage.destination;
+    document.getElementById("finalDate").textContent = donneesVoyage.dateDepart;
+
+    document.getElementById("finalOffre").textContent =
+      offreSelectionnee.compagnie + " — " + offreSelectionnee.prix + " " + offreSelectionnee.devise;
+
+    document.getElementById("finalSiege").textContent = siegeSelectionne;
+    document.getElementById("finalPaiement").textContent = paiementSelectionne;
+
+    document.getElementById("boiteConfirmation").style.display = "block";
+    document.getElementById("confirmation").scrollIntoView({ behavior: "smooth" });
+	
+async function payerAvecStripe() {
+  if (!offreSelectionnee) {
+    alert("Veuillez choisir une offre.");
+    return;
+  }
+
+  if (!siegeSelectionne) {
+    alert("Veuillez choisir un siège.");
+    return;
+  }
+
+  const donneesPaiement = {
+    compagnie: offreSelectionnee.compagnie,
+    depart: donneesVoyage.depart,
+    destination: donneesVoyage.destination,
+    dateDepart: donneesVoyage.dateDepart,
+    siege: siegeSelectionne,
+    prix: offreSelectionnee.prix,
+    devise: offreSelectionnee.devise
+  };
+
+  try {
+    const reponse = await fetch("/api/creer-paiement", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(donneesPaiement)
+    });
+
+    const resultat = await reponse.json();
+
+    if (!resultat.success || !resultat.url) {
+      throw new Error(resultat.message || "Impossible de créer le paiement.");
+    }
+
+    window.location.href = resultat.url;
+
+  } catch (erreur) {
+    alert("Erreur de paiement : " + erreur.message);
+  }
+}
+  }
+  
+async function payerAvecStripe() {
+  if (!offreSelectionnee) {
+    alert("Veuillez choisir une offre.");
+    return;
+  }
+
+  if (!siegeSelectionne) {
+    alert("Veuillez choisir un siège.");
+    return;
+  }
+
+  const donneesPaiement = {
+    compagnie: offreSelectionnee.compagnie,
+    depart: donneesVoyage.depart,
+    destination: donneesVoyage.destination,
+    dateDepart: donneesVoyage.dateDepart,
+    siege: siegeSelectionne,
+    prix: offreSelectionnee.prix,
+    devise: offreSelectionnee.devise
+  };
+
+  try {
+    const reponse = await fetch("/api/creer-paiement", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(donneesPaiement)
+    });
+
+    const resultat = await reponse.json();
+
+    if (!resultat.success || !resultat.url) {
+      throw new Error(resultat.message || "Impossible de créer le paiement Stripe.");
+    }
+
+    window.location.href = resultat.url;
+
+  } catch (erreur) {
+    alert("Erreur de paiement : " + erreur.message);
+  }
+}
+
+function chercherVolPourReserver() {
+  const depart = document.getElementById("depart").value.trim().toUpperCase();
+  const destination = document.getElementById("destination").value.trim().toUpperCase();
+  const dateDepart = document.getElementById("dateDepart").value;
+  const dateRetour = document.getElementById("dateRetour").value;
+  const typeTrajet = document.getElementById("typeTrajet").value;
+  const adultes = document.getElementById("adultes").value || "1";
+  const classe = document.getElementById("classe").value;
+
+  if (!depart || !destination || !dateDepart) {
+    alert("Veuillez renseigner le départ, la destination et la date de départ.");
+    return;
+  }
+
+  if (depart.length !== 3 || destination.length !== 3) {
+    alert("Les codes IATA doivent contenir exactement 3 lettres. Exemple : YUL, PAR, ALG.");
+    return;
+  }
+
+  let recherche = `vol ${depart} vers ${destination} le ${dateDepart}`;
+
+  if (typeTrajet === "aller-retour" && dateRetour) {
+    recherche += ` retour le ${dateRetour}`;
+  }
+
+  recherche += ` ${adultes} adulte classe ${classe}`;
+
+  const url = "https://www.google.com/travel/flights?q=" + encodeURIComponent(recherche);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+</script>
+
 </body>
 </html>
